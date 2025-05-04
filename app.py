@@ -5,6 +5,7 @@ from simulation.optimization import find_optimal_params
 import pandas as pd
 import matplotlib.pyplot as plt
 import mediapy as media
+import mujoco
 
 app = Flask(__name__)
 

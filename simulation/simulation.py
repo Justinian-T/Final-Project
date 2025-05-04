@@ -68,16 +68,27 @@ def run_sim(k, b, grav, bsize, render=False):
     V_control = 5
     b_fit = 1.404e-6
     kp_fit = 8.896
-    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize / 2, ts=ts)
+    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize, ts=ts)
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
     renderer = mujoco.Renderer(model, width=width, height=height)
 
+    # State variables to track motion
+    actuation_complete = [False]  # Tracks if the actuator has returned home
+    block_descending = [False]  # Tracks if the block has started descending
+    jump_started = [False]  # Tracks if the jump has started
+
     # Set the initial angle of joint2 (in radians)
     def my_controller(model, data):
+        if actuation_complete[0]:
+            # Stop actuation if the motion is complete
+            data.ctrl[0] = 0
+            return
+
         w = data.qvel[1]  # Angular velocity of the joint
         actual = data.qpos[1]  # Current position of the joint
         trunk_velocity = data.qvel[0]  # Vertical velocity of the trunk
+
 
         # Define the desired position based on trunk motion
         if trunk_velocity < 0:  # Trunk is moving downward
