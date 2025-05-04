@@ -30,12 +30,12 @@ xml_template = '''
         <body name="floor" pos="0 0 0">
             <geom name="floor" pos="0 0 0" size="1 1 .05" type="plane" rgba="1 .83 .61 .5" />
         </body>
-        <body name="trunk" pos="0 0 0.1">
+        <body name="trunk" pos="0 0 0">
             <joint name="joint1" type="slide" axis="0 0 1" />
-            <geom name="trunk" pos="0 0.05 0.1" size=".025 .025 .025" type="box" rgba="1 1 0 1" mass=".01" contype="1" conaffinity="1"/>
+            <geom name="trunk" pos="0 0.05 0.05" size=".025 .025 .025" type="box" rgba="1 1 0 1" mass=".01" contype="1" conaffinity="1"/>
             <body name="leg_link1" pos="-0.0125 0.05 0">
                 <joint name="joint2" type="slide" axis="0 0 1" />
-                <geom name="leg_link1" pos="0.025 0 0.025" size=".01 .01 .015" type="box" rgba="0.66 0 1 0.66" mass=".001" contype="1" conaffinity="1" />
+                <geom name="leg_link1" pos="0.025 0 0.015" size=".01 .01 .015" type="box" rgba="0.66 0 1 0.66" mass=".001" contype="1" conaffinity="1" />
                 <body name="leg_link2" pos="0 0 0">
                     <joint name="joint3" type="hinge" axis="0 1 0" stiffness="{k:e}" damping="{b:e}" limited="true" range="0 90" />
                     <geom name="leg_link2" pos="{bsize2:e} 0 0" size="{bsize:e} 0.01 .01" type="box" rgba="1 0 0 1" mass=".001" />
@@ -68,48 +68,23 @@ def run_sim(k, b, grav, bsize, render=False):
     V_control = 5
     b_fit = 1.404e-6
     kp_fit = 8.896
-    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize / 2, ts=1e-4)
+    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize / 2, ts=ts)
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
     renderer = mujoco.Renderer(model, width=width, height=height)
 
-    # State variables to track motion
-    actuation_complete = [False]  # Tracks if the actuator has returned home
-    block_descending = [False]  # Tracks if the block has started descending
-    jump_started = [False]  # Tracks if the jump has started
-
     # Set the initial angle of joint2 (in radians)
     def my_controller(model, data):
-        if actuation_complete[0]:
-            # Stop actuation if the motion is complete
-            data.ctrl[0] = 0
-            return
-
         w = data.qvel[1]  # Angular velocity of the joint
         actual = data.qpos[1]  # Current position of the joint
         trunk_velocity = data.qvel[0]  # Vertical velocity of the trunk
 
-        # Detect if the jump has started (block moving upward)
-        if trunk_velocity > 0:
-            jump_started[0] = True
+        # Define the desired position based on trunk motion
+        if trunk_velocity < 0:  # Trunk is moving downward
+            desired = 0  # Return to home position
+        else:
+            desired = math.pi  # Rotate to 180 degrees
 
-        # Check if the block has started descending after the jump
-        if jump_started[0] and trunk_velocity < 0:
-            block_descending[0] = True
-
-        # Define the desired position
-        if block_descending[0]:  # If the block is descending, return to home position
-            desired = 0
-        else:  # Otherwise, rotate to 180 degrees
-            desired = math.pi
-
-        # Stop actuation once the actuator is close to the home position
-        if block_descending[0] and abs(actual - 0) < 1e-2:  # Threshold for home position
-            data.ctrl[0] = 0  # Stop actuation
-            actuation_complete[0] = True  # Mark actuation as complete
-            return
-
-        # Compute control signal
         error = desired - actual
         V = kp_fit * error
         if V > V_control:

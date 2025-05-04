@@ -2,6 +2,52 @@
 <html>
 <head>
     <title>Simulation</title>
+    <style>
+   
+        body {
+            background-color: #1e1e1e; /* Dark gray background */
+            color: #ffffff; /* White text color for better contrast */
+            font-family: Arial, sans-serif; /* Set a clean font */
+            margin: 0;
+            padding: 20px;
+        }
+
+
+        /* Style for the sliders */
+        input[type="range"] {
+            width: 500px; /* Adjust the width of the slider */
+            height: 10px; /* Adjust the height of the slider */
+            color: rgb(7, 14, 115) 
+        }
+
+        /* Style for the slider labels */
+        label {
+            font-size: 22px; /* Adjust the font size of the labels */
+            font-weight: bold; /* Make the labels bold */
+        }
+
+        /* Style for the slider values */
+        span {
+            font-size: 22px; /* Adjust the font size of the slider values */
+        }
+
+        /* Style for buttons */
+        button {
+            font-size: 22px; /* Increase the font size of the button text */
+            padding: 20px 40px; /* Add padding to make the button larger */
+            background-color: #17041d; /* Set a background color */
+            color: rgb(118, 23, 158); /* Set the text color */
+            border: none; /* Remove the border */
+            border-radius: 8px; /* Add rounded corners */
+            cursor: pointer; /* Change the cursor to a pointer on hover */
+        }
+
+        /* Add hover effect for buttons */
+        button:hover {
+            background-color: #b19311; /* Darker green on hover */
+        }
+
+    </style>
     <script>
         // Function to update the displayed value of a slider
         function updateSliderValue(sliderId, valueId) {
@@ -43,6 +89,51 @@
                 document.getElementById("results").style.display = "block";
             });
         }
+
+        // Function to run the optimization
+        function runOptimization() {
+            fetch("/find_optimal", {
+                method: "GET"
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Display the optimization results
+                document.getElementById("optimal-results").innerHTML = `
+                    <h3>Optimization Results</h3>
+                    <p>Optimal Stiffness: ${data.optimal_stiffness}</p>
+                    <p>Max Height: ${data.max_height}</p>
+                `;
+
+                // Display the k vs. height plot
+                document.getElementById("comparison-plot").src = data.comparison_plot_path + "?t=" + new Date().getTime(); // Cache-busting
+
+                // Display the optimal simulation video
+                document.getElementById("optimal-simulation-video").src = data.video_path + "?t=" + new Date().getTime(); // Cache-busting
+
+                // Display the optimal vs. user-defined jump plot
+                document.getElementById("comparison-jump-plot").src = data.comparison_jump_plot_path + "?t=" + new Date().getTime(); // Cache-busting
+
+                document.getElementById("optimal-results-container").style.display = "block";
+            });
+        }
+
+        // Function to reset the simulation
+        function resetSimulation() {
+            fetch("/reset_simulation", {
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+
+                // Clear the results from the page
+                document.getElementById("simulation-plot").src = "";
+                document.getElementById("simulation-video").src = "";
+                document.getElementById("comparison-plot").src = "";
+                document.getElementById("optimal-results-container").style.display = "none";
+                document.getElementById("results").style.display = "none";
+            });
+        }
     </script>
 </head>
 <body>
@@ -50,21 +141,23 @@
     <form id="simulation-form">
         <label for="stiffness">Stiffness:</label>
         <input type="range" id="stiffness" name="stiffness" min="0.05" max="3" step="0.01">
-        <span id="stiffnessValue">0.05</span><br>
+        <span id="stiffnessValue">0.05</span><br><br>
 
         <label for="damping">Damping:</label>
         <input type="range" id="damping" name="damping" min="0.05" max="3" step="0.01">
-        <span id="dampingValue">0.05</span><br>
+        <span id="dampingValue">0.05</span><br><br>
 
         <label for="gravity">Gravity:</label>
         <input type="range" id="gravity" name="gravity" min="0.01" max="100" step="0.01">
-        <span id="gravityValue">0.01</span><br>
+        <span id="gravityValue">0.01</span><br><br>
 
         <label for="body_size">Body Size:</label>
         <input type="range" id="body_size" name="body_size" min="0.001" max="0.3" step="0.001">
-        <span id="bodySizeValue">0.001</span><br>
+        <span id="bodySizeValue">0.001</span><br><br>
 
         <button type="button" onclick="runSimulation()">Run Simulation</button>
+        <button type="button" onclick="runOptimization()">Run Optimization</button>
+        <button type="button" onclick="resetSimulation()">Reset Simulation</button>
     </form>
 
     <div id="results" style="display: none;">
@@ -72,10 +165,23 @@
         <h3>Plot:</h3>
         <img id="simulation-plot" src="" alt="Simulation Plot" style="max-width: 100%; height: auto;">
         <h3>Video:</h3>
-        <video id="simulation-video" controls style="max-width: 100%; height: auto;">
+        <video id="simulation-video" controls loop style="max-width: 100%; height: auto;">
             <source src="" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+    </div>
+
+    <div id="optimal-results-container" style="display: none;">
+        <div id="optimal-results"></div>
+        <h3>Comparison Plot:</h3>
+        <img id="comparison-plot" src="" alt="Comparison Plot" style="max-width: 100%; height: auto;">
+        <h3>Optimal Simulation Video:</h3>
+        <video id="optimal-simulation-video" controls loop style="max-width: 100%; height: auto;">
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        <h3>Optimal vs User-Defined Jump Plot:</h3>
+        <img id="comparison-jump-plot" src="" alt="Optimal vs User-Defined Jump Plot" style="max-width: 100%; height: auto;">
     </div>
 </body>
 </html>
