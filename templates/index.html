@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulation</title>
+    <script>
+        // Function to update the displayed value of a slider
+        function updateSliderValue(sliderId, valueId) {
+            const slider = document.getElementById(sliderId);
+            const valueDisplay = document.getElementById(valueId);
+            valueDisplay.textContent = slider.value;
+
+            // Update the value dynamically when the slider is moved
+            slider.addEventListener("input", () => {
+                valueDisplay.textContent = slider.value;
+            });
+        }
+
+        // Initialize slider values on page load
+        window.onload = () => {
+            updateSliderValue("stiffness", "stiffnessValue");
+            updateSliderValue("damping", "dampingValue");
+            updateSliderValue("gravity", "gravityValue");
+            updateSliderValue("body_size", "bodySizeValue");
+        };
+
+        // Function to send slider values to the backend and display results
+        function runSimulation() {
+            const formData = new FormData(document.getElementById("simulation-form"));
+            const data = Object.fromEntries(formData.entries());
+
+            fetch("/run_simulation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+
+                // Update the plot and video
+                document.getElementById("simulation-plot").src = data.plot_path + "?t=" + new Date().getTime(); // Cache-busting
+                document.getElementById("simulation-video").src = data.video_path + "?t=" + new Date().getTime(); // Cache-busting
+                document.getElementById("results").style.display = "block";
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Simulation Input</h1>
+    <form id="simulation-form">
+        <label for="stiffness">Stiffness:</label>
+        <input type="range" id="stiffness" name="stiffness" min="0.05" max="3" step="0.01">
+        <span id="stiffnessValue">0.05</span><br>
+
+        <label for="damping">Damping:</label>
+        <input type="range" id="damping" name="damping" min="0.05" max="3" step="0.01">
+        <span id="dampingValue">0.05</span><br>
+
+        <label for="gravity">Gravity:</label>
+        <input type="range" id="gravity" name="gravity" min="0.01" max="100" step="0.01">
+        <span id="gravityValue">0.01</span><br>
+
+        <label for="body_size">Body Size:</label>
+        <input type="range" id="body_size" name="body_size" min="0.001" max="0.3" step="0.001">
+        <span id="bodySizeValue">0.001</span><br>
+
+        <button type="button" onclick="runSimulation()">Run Simulation</button>
+    </form>
+
+    <div id="results" style="display: none;">
+        <h2>Simulation Results</h2>
+        <h3>Plot:</h3>
+        <img id="simulation-plot" src="" alt="Simulation Plot" style="max-width: 100%; height: auto;">
+        <h3>Video:</h3>
+        <video id="simulation-video" controls style="max-width: 100%; height: auto;">
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</body>
+</html>

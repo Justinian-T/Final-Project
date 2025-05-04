@@ -1,0 +1,77 @@
+def run_sim(k, b, grav, bsize, render=False):
+    Vrom = 6
+    R = Vrom / 0.6
+    G = grav
+    t_stall = 15 / 100 / G
+    i_stall = 0.6
+    i_nl = 0.2
+    w_nl = 0.66 * 1000 * 2 * math.pi / 180 * G
+
+    kt = t_stall / i_stall
+    ke = kt
+
+    b_calc = kt * i_nl / w_nl
+    ts = 1e-4
+
+    V_control = 5
+    b_fit = 1.404e-6
+    kp_fit = 8.896
+    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize / 2, ts=ts)
+    model = mujoco.MjModel.from_xml_string(xml)
+    data = mujoco.MjData(model)
+    renderer = mujoco.Renderer(model, width=width, height=height)
+
+    # Set the initial angle of joint2 (in radians)
+    def my_controller(model, data):
+        w = data.qvel[1]  # Angular velocity of the joint
+        actual = data.qpos[1]  # Current position of the joint
+        trunk_velocity = data.qvel[0]  # Vertical velocity of the trunk
+
+        # Define the desired position based on trunk motion
+        if trunk_velocity < 0:  # Trunk is moving downward
+            desired = 0  # Return to home position
+        else:
+            desired = math.pi  # Rotate to 180 degrees
+
+        error = desired - actual
+        V = kp_fit * error
+        if V > V_control:
+            V = V_control
+        if V < -V_control:
+            V = -V_control
+
+        torque = (kt * (V - (ke) * w * G) / R - b_fit * w * G) * G
+
+        data.ctrl[0] = torque
+
+    try:
+        mujoco.set_mjcb_control(my_controller)
+        duration = 5
+
+        frames = []
+        t = []
+        xy = []
+
+        mujoco.mj_resetData(model, data)
+
+        while data.time < duration:
+            mujoco.mj_step(model, data)
+
+            if render:
+                if len(frames) < data.time * framerate:
+                    renderer.update_scene(data)
+                    pixels = renderer.render()
+                    frames.append(pixels)
+
+            if len(xy) < data.time * data_rate:
+                t.append(data.time)
+                xy.append(data.xpos.copy())
+
+        if render:
+            media.show_video(frames, fps=framerate, codec='gif')
+        t = numpy.array(t)
+        xy = numpy.array(xy)
+    finally:
+        mujoco.set_mjcb_control(None)
+
+    return t, xy, frames
