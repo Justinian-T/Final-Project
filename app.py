@@ -17,7 +17,7 @@ def run_simulation():
     # Get slider values from the request
     data = request.json
     k = float(data["stiffness"])*10**-2  # Convert to float
-    b = float(data["damping"])*10**-2/100    # Convert to float
+    b = float(data["damping"])*10**-3/100    # Convert to float
     g = float(data["gravity"])    # Convert to float
     body_size = float(data["body_size"])  # Convert to float
 

@@ -68,7 +68,7 @@ def run_sim(k, b, grav, bsize, render=False):
     V_control = 5
     b_fit = 1.404e-6
     kp_fit = 8.896
-    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize / 2, ts=ts)
+    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize, ts=ts)
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
     renderer = mujoco.Renderer(model, width=width, height=height)
