@@ -4,3 +4,4 @@ scipy
 pandas
 mujoco
 mediapy
+matplotlib

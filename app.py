@@ -1,4 +1,28 @@
 import os
+import subprocess
+import sys
+
+# Ensure all required packages are installed
+def install_requirements():
+    required_packages = [
+        "Flask",
+        "numpy",
+        "scipy",
+        "pandas",
+        "mujoco",
+        "mediapy",
+        "matplotlib"
+    ]
+    for package in required_packages:
+        try:
+            __import__(package.lower())  # Try importing the package
+        except ImportError:
+            print(f"Installing missing package: {package}")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+install_requirements()
+
+# Import the required packages after ensuring they are installed
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from simulation.simulation import run_sim
 from simulation.optimization import find_optimal_params
