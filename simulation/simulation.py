@@ -26,7 +26,7 @@ xml_template = '''
     </default>
 
     <worldbody>
-        <light name="top" pos="0 0 1" />
+        <light name="top" pos="0 0 20" />
         <body name="floor" pos="0 0 0">
             <geom name="floor" pos="0 0 0" size="1 1 .05" type="plane" rgba="1 .83 .61 .5" />
         </body>
@@ -50,7 +50,7 @@ xml_template = '''
 </mujoco>
 '''
 
-def run_sim(k, b, grav, bsize, render=False):
+def run_sim(k, b, grav, leg_size, render=False):
     Vrom = 6
     R = Vrom / 0.6
     G = grav
@@ -68,7 +68,7 @@ def run_sim(k, b, grav, bsize, render=False):
     V_control = 5
     b_fit = 1.404e-6
     kp_fit = 8.896
-    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=bsize, bsize2=bsize, ts=ts)
+    xml = xml_template.format(k=k, b=b, width=width, height=height, bsize=leg_size, bsize2=leg_size, ts=ts)
     model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
     renderer = mujoco.Renderer(model, width=width, height=height)

@@ -66,7 +66,7 @@
             updateSliderValue("stiffness", "stiffnessValue");
             updateSliderValue("damping", "dampingValue");
             updateSliderValue("gravity", "gravityValue");
-            updateSliderValue("body_size", "bodySizeValue");
+            updateSliderValue("leg_size", "legSizeValue");
         };
 
         // Function to send slider values to the backend and display results
@@ -100,11 +100,11 @@
                 // Display the optimization results
                 document.getElementById("optimal-results").innerHTML = `
                     <h3>Optimization Results</h3>
-                    <p>Optimal Stiffness: ${data.optimal_stiffness}</p>
+                    <p>Optimal Damping: ${data.optimal_damping}</p>
                     <p>Max Height: ${data.max_height}</p>
                 `;
 
-                // Display the k vs. height plot
+                // Display the b vs. height plot
                 document.getElementById("comparison-plot").src = data.comparison_plot_path + "?t=" + new Date().getTime(); // Cache-busting
 
                 // Display the optimal simulation video
@@ -151,9 +151,9 @@
         <input type="range" id="gravity" name="gravity" min="0.01" max="100" step="0.01">
         <span id="gravityValue">0.01</span><br><br>
 
-        <label for="body_size">Body Size:</label>
-        <input type="range" id="body_size" name="body_size" min="0.001" max="0.3" step="0.001">
-        <span id="bodySizeValue">0.001</span><br><br>
+        <label for="leg_size">Leg Size:</label>
+        <input type="range" id="leg_size" name="leg_size" min="0.001" max="0.3" step="0.001">
+        <span id="legSizeValue">0.001</span><br><br>
 
         <button type="button" onclick="runSimulation()">Run Simulation</button>
         <button type="button" onclick="runOptimization()">Run Optimization</button>

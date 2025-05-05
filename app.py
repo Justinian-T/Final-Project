@@ -19,15 +19,15 @@ def run_simulation():
     k = float(data["stiffness"])*10**-2  # Convert to float
     b = float(data["damping"])*10**-3/100    # Convert to float
     g = float(data["gravity"])    # Convert to float
-    body_size = float(data["body_size"])  # Convert to float
+    leg_size = float(data["leg_size"])  # Convert to float
 
     # Run the simulation
-    t, xy, frames = run_sim(k, b, g, body_size, render=True)
+    t, xy, frames = run_sim(k, b, g, leg_size, render=True)
 
     # Save results to CSV
     with open("simulation_params.csv", "w") as f:
-        f.write("Stiffness,Damping,Gravity,Body Size\n")
-        f.write(f"{k},{b},{g},{body_size}\n")
+        f.write("Stiffness,Damping,Gravity,Leg Size\n")
+        f.write(f"{k},{b},{g},{leg_size}\n")
 
     # Generate and save the plot
     plot_path = os.path.join("static", "simulation_plot.png")
@@ -53,27 +53,27 @@ def run_simulation():
 
 @app.route("/find_optimal", methods=["GET"])
 def find_optimal():
-    # Read the CSV file to get gravity and body size
+    # Read the CSV file to get gravity and leg size
     df = pd.read_csv("simulation_params.csv")
     g = df["Gravity"].iloc[0]
-    body_size = df["Body Size"].iloc[0]
-    damp = df["Damping"].iloc[0]
+    leg_size = df["Leg Size"].iloc[0]
+    stiffness = df["Stiffness"].iloc[0]  # Keep stiffness constant
 
-    # Find optimal parameters and collect data for the plot
-    optimal_k, max_height, k_values, heights, optimal_t, optimal_xy, optimal_frames = find_optimal_params(g, body_size, damp)
+    # Find optimal damping and collect data for the plot
+    optimal_b, max_height, b_values, heights, optimal_t, optimal_xy, optimal_frames = find_optimal_params(g, leg_size, stiffness)
 
     # Ensure the static directory exists
     static_dir = os.path.join(os.getcwd(), "static")
     if not os.path.exists(static_dir):
         os.makedirs(static_dir)
 
-    # Generate and save the k vs. height plot
-    comparison_plot_path = os.path.join(static_dir, "k_vs_height_plot.png")
+    # Generate and save the b vs. height plot
+    comparison_plot_path = os.path.join(static_dir, "b_vs_height_plot.png")
     plt.figure(figsize=(8, 6))
-    plt.plot(k_values, heights, marker="o", label="Max Height vs Stiffness (k)")
-    plt.axvline(optimal_k, color="red", linestyle="--", label=f"Optimal k = {optimal_k:.2f}")
-    plt.title("Max Height vs Stiffness (k)")
-    plt.xlabel("Stiffness (k)")
+    plt.plot(b_values, heights, marker="o", label="Max Height vs Damping (b)")
+    plt.axvline(optimal_b, color="red", linestyle="--", label=f"Optimal b = {optimal_b:.2e}")
+    plt.title("Max Height vs Damping (b)")
+    plt.xlabel("Damping (b)")
     plt.ylabel("Max Height (m)")
     plt.ylim(0, max_height * 1.1)  # Adjust y-axis limit
     plt.legend()
@@ -86,7 +86,7 @@ def find_optimal():
     media.write_video(video_path, optimal_frames, fps=30)
 
     # Generate the optimal vs. user-defined jump plot
-    user_t, user_xy, _ = run_sim(df["Stiffness"].iloc[0], damp, g, body_size, render=False)
+    user_t, user_xy, _ = run_sim(stiffness, df["Damping"].iloc[0], g, leg_size, render=False)
 
     comparison_jump_plot_path = os.path.join(static_dir, "optimal_vs_user_jump_plot.png")
     plt.figure(figsize=(8, 6))
@@ -102,9 +102,9 @@ def find_optimal():
 
     return jsonify({
         "message": "Optimization completed!",
-        "optimal_stiffness": optimal_k,
+        "optimal_damping": optimal_b,
         "max_height": max_height,
-        "comparison_plot_path": "/static/k_vs_height_plot.png",
+        "comparison_plot_path": "/static/b_vs_height_plot.png",
         "video_path": "/static/optimal_simulation_video.mp4",
         "comparison_jump_plot_path": "/static/optimal_vs_user_jump_plot.png"
     })
